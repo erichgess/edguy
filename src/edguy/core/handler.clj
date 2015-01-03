@@ -7,8 +7,7 @@
             [clojure.tools.logging :as logging]
             [clj-http.client :as http]
             [clojure.string :as str]
-            )
-  )
+            ))
 
 (def slack-hook-url (System/getenv "SLACK_HOOK_URL"))
 
@@ -30,6 +29,12 @@
   (def title (pull_request "title"))
   {:text (str "<" user_url "|" user "> has created a new pull request: <" url "|" title ">")})
 
+(defn replace-+-with-space [text]
+  (str/replace text "+" " "))
+
+(def command-map
+  { "edguy get my pull requests" ""
+    "edguy " ""})
 
 (defroutes app-routes
   (GET "/" request 
