@@ -22,12 +22,8 @@
   (http/post slack-hook-url {:body (json/generate-string message)}))
 
 (defn pull-request-to-slack-message [pr-body]
-  (def status (pr-body "state"))
-  (def user ((pr-body "user") "login"))
-  (def user_url ((pr-body "user") "html_url"))
-  (def url (pr-body "html_url"))
-  (def title (pr-body "title"))
-  {:text (str "<" user_url "|" user "> has created a new pull request: <" url "|" title ">")})
+  (def pr-data (github/parse-pull-request pr-body))
+  {:text (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">")})
 
 (defn replace-+-with-space [text]
   (str/replace text "+" " "))
@@ -59,6 +55,5 @@
   (->
     app-routes
     middleware/wrap-json-params
-    middleware/wrap-json-body
     ring.middleware.logger/wrap-with-logger
     ))
