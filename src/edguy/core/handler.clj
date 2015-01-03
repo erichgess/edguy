@@ -21,16 +21,17 @@
   (logging/info "Sending to Slack!")
   (http/post slack-hook-url {:body (json/generate-string message)}))
 
+(defn parse-slack-outgoing-hook [message]
+  (into {} (map #(array-map (% 0) (% 1)) (map #(str/split % #"=") (str/split (slurp message) #"&")))))
+
 (defn pull-request-to-slack-message [pr-body]
   (def pr-data (github/parse-pull-request pr-body))
   {:text (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">")})
 
-(defn replace-+-with-space [text]
-  (str/replace text "+" " "))
-
-(def command-map
-  { "edguy get my pull requests" #((github/pull-requests-by-user) %)
-    "edguy " ""})
+(defn edguy-routes [user message]
+  ({ "edguy get my pull requests" #((github/pull-requests-by-user) %)
+    "edguy " ""}
+   message) user)
 
 (defroutes app-routes
   (GET "/" request 
@@ -46,10 +47,11 @@
                         "User" ((pull_request "user") "login")
                         "State" (pull_request "state")}))
   (POST "/slackbot" {body :body}
-        (def slack-data (into {} (map #(array-map (% 0) (% 1 ) ) (map #(str/split % #"=") (str/split (slurp body) #"&")))))
+        (def slack-data (parse-slack-outgoing-hook body))
         (logging/info (slack-data "user_name"))
         (logging/info (java.net.URLDecoder/decode (slack-data "text")))
-        (logging/info (slack-data "trigger_word")))
+        (logging/info (slack-data "trigger_word"))
+        (edguy-routes (slack-data "user_name") (slack-data "text")))
   (route/not-found "Not Found Sorry"))
 
 (def app
