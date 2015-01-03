@@ -47,13 +47,13 @@
                         "State" (pull_request "state")}))
   (POST "/slackbot" {body :body}
         (def slack-data (into {} (map #(array-map (% 0) (% 1 ) ) (map #(str/split % #"=") (str/split (slurp body) #"&")))))
-        (logging/debug (slack-data "user_name"))
-        (logging/debug (slack-data "text")))
+        (logging/info (slack-data "user_name"))
+        (logging/info (java.net.URLDecoder/decode (slack-data "text")))
+        (logging/info (slack-data "trigger_word")))
   (route/not-found "Not Found Sorry"))
 
 (def app
   (->
     app-routes
     middleware/wrap-json-params
-    ring.middleware.logger/wrap-with-logger
-    ))
+    ring.middleware.logger/wrap-with-logger))
