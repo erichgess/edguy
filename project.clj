@@ -10,7 +10,7 @@
                  [cheshire "5.4.0"]
                  [clj-http "0.9.1"]]
   :plugins [[lein-ring "0.8.13"]]
-  :ring {:handler edguy.core.handler/app}
+  :ring {:handler edguy.core.handler/app :port 4567}
   :profiles
   {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring-mock "0.1.5"]]}})
