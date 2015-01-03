@@ -6,8 +6,8 @@
             [ring.middleware.logger]
             [clojure.tools.logging :as logging]
             [clj-http.client :as http]
-            [clojure.string :as str]
-            ))
+            [clojure.string :as str])
+  (:use [edguy.core.github :as github]))
 
 (def slack-hook-url (System/getenv "SLACK_HOOK_URL"))
 
@@ -22,18 +22,18 @@
   (http/post slack-hook-url {:body (json/generate-string message)}))
 
 (defn pull-request-to-slack-message [pr-body]
-  (def status (pull_request "state"))
-  (def user ((pull_request "user") "login"))
-  (def user_url ((pull_request "user") "html_url"))
-  (def url (pull_request "html_url"))
-  (def title (pull_request "title"))
+  (def status (pr-body "state"))
+  (def user ((pr-body "user") "login"))
+  (def user_url ((pr-body "user") "html_url"))
+  (def url (pr-body "html_url"))
+  (def title (pr-body "title"))
   {:text (str "<" user_url "|" user "> has created a new pull request: <" url "|" title ">")})
 
 (defn replace-+-with-space [text]
   (str/replace text "+" " "))
 
 (def command-map
-  { "edguy get my pull requests" ""
+  { "edguy get my pull requests" #((github/pull-requests-by-user) %)
     "edguy " ""})
 
 (defroutes app-routes
@@ -48,8 +48,7 @@
         (json-response {"Title" (pull_request "title")
                         "Url" (pull_request "html_url")
                         "User" ((pull_request "user") "login")
-                        "State" (pull_request "state")
-                        }))
+                        "State" (pull_request "state")}))
   (POST "/slackbot" {body :body}
         (def slack-data (into {} (map #(array-map (% 0) (% 1 ) ) (map #(str/split % #"=") (str/split (slurp body) #"&")))))
         (logging/debug (slack-data "user_name"))
