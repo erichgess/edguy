@@ -15,7 +15,9 @@
    :title (pr-body "title")})
 
 (defn query-url [url username password]
-   ( http/get url {:basic-auth [username password]}))
+   (def response ( http/get url {:basic-auth [username password]}))
+   (logging/info response)
+   response)
 
 (defn extract-title-and-creator [pull-requests]
   (map parse-pull-request pull-requests))
@@ -28,7 +30,7 @@
         ((query-url github_url github_user github_password) :body)))))
 
 (defn group-by-user [pull-requests]
-	(map (group-by #(% :user) pull-requests)))
+	(group-by #(% :user) pull-requests))
 
 (defn pull-requests-by-user [] (group-by-user (get-pull-requests)))
 

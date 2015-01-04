@@ -14,24 +14,31 @@
 (defn json-response [data & [status]]
   {:status (or status 200)
    :headers {"Content-Type" "application/json"}
-   :body (json/generate-string data)
-   })
+   :body (json/generate-string data)})
 
 (defn post-to-slack [message]
   (logging/info "Sending to Slack!")
   (http/post slack-hook-url {:body (json/generate-string message)}))
 
 (defn parse-slack-outgoing-hook [message]
-  (into {} (map #(array-map (% 0) (% 1)) (map #(str/split % #"=") (str/split (slurp message) #"&")))))
+  (into {} (map #(array-map (% 0) (java.net.URLDecoder/decode (% 1))) (map #(str/split % #"=") (str/split (slurp message) #"&")))))
 
-(defn pull-request-to-slack-message [pr-body]
-  (def pr-data (github/parse-pull-request pr-body))
-  {:text (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">")})
+(defn pull-request-to-slack-text [pr-data]
+  (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">"))
+
+(defn get-pull-requests-for-user [user]
+  ((github/pull-requests-by-user) user))
+
+(defn get-all-pull-requests [user]
+  (github/get-pull-requests))
+
+(def commands
+  {"edguy get my pull requests" get-pull-requests-for-user
+   "edguy get all pull requests" get-all-pull-requests})
 
 (defn edguy-routes [user message]
-  ({ "edguy get my pull requests" #((github/pull-requests-by-user) %)
-    "edguy " ""}
-   message) user)
+  (logging/info "edguy got " user message)
+  ((commands message) ""))
 
 (defroutes app-routes
   (GET "/" request 
@@ -51,7 +58,8 @@
         (logging/info (slack-data "user_name"))
         (logging/info (java.net.URLDecoder/decode (slack-data "text")))
         (logging/info (slack-data "trigger_word"))
-        (edguy-routes (slack-data "user_name") (slack-data "text")))
+        (def x (edguy-routes (slack-data "user_name") (slack-data "text")))
+        (json-response {"text" (str/join "\n" (map pull-request-to-slack-text x))}))
   (route/not-found "Not Found Sorry"))
 
 (def app
