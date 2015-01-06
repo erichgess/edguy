@@ -9,7 +9,7 @@
             [clojure.string :as str])
   (:use [edguy.core.github :as github]))
 
-(def slack-hook-url (System/getenv "SLACK_HOOK_URL"))
+(def slack-hook-url (System/getenv "EDGUY_SLACK_HOOK_URL"))
 
 (defn json-response [data & [status]]
   {:status (or status 200)
@@ -48,7 +48,7 @@
         (logging/debug (pull_request "title"))
         (logging/debug (pull_request "html_url"))
         (logging/debug ((pull_request "user") "login"))
-        (post-to-slack (pull-request-to-slack-message pull_request))
+        (post-to-slack (pull-request-to-slack-text pull_request))
         (json-response {"Title" (pull_request "title")
                         "Url" (pull_request "html_url")
                         "User" ((pull_request "user") "login")

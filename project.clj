@@ -8,7 +8,9 @@
                  [ring/ring-json "0.3.1"]
                  [ring.middleware.logger "0.5.0"]
                  [cheshire "5.4.0"]
-                 [clj-http "0.9.1"]]
+                 [clj-http "0.9.1"]
+                 [org.clojure/java.jdbc "0.3.6"]
+                 [org.xerial/sqlite-jdbc "3.8.7"]]
   :plugins [[lein-ring "0.8.13"]]
   :ring {:handler edguy.core.handler/app :port 4567}
   :profiles

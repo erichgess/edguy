@@ -3,9 +3,8 @@
             [clojure.tools.logging :as logging]
             [clj-http.client :as http]))
 
-(def github_user (System/getenv "GITHUB_USERNAME"))
-(def github_password (System/getenv "GITHUB_PASSWORD"))
-(def github_url (System/getenv "GITHUB_URL"))
+(def github_token (System/getenv "EDGUY_GITHUB_ACCESS_TOKEN"))
+(def github_url (System/getenv "EDGUY_GITHUB_URL"))
 
 (defn parse-pull-request [pr-body]
   {:status (pr-body "state")
@@ -14,8 +13,8 @@
    :url (pr-body "html_url")
    :title (pr-body "title")})
 
-(defn query-url [url username password]
-   (def response ( http/get url {:basic-auth [username password]}))
+(defn query-url [url token]
+   (def response ( http/get url {:basic-auth [token ""]}))
    (logging/info "successfully got response from GitHub")
    response)
 
@@ -27,7 +26,7 @@
     #(% :user) 
     (extract-title-and-creator 
       (json/parse-string
-        ((query-url github_url github_user github_password) :body)))))
+        ((query-url github_url github_token) :body)))))
 
 (defn group-by-user [pull-requests]
   (group-by #(% :user) pull-requests))
