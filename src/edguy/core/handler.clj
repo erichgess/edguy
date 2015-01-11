@@ -7,7 +7,8 @@
             [clojure.tools.logging :as logging]
             [clj-http.client :as http]
             [clojure.string :as str])
-  (:use [edguy.core.github :as github]))
+  (:use [edguy.core.github :as github]
+        [edguy.core.users :as users]))
 
 (def slack-hook-url (System/getenv "EDGUY_SLACK_HOOK_URL"))
 
@@ -26,19 +27,33 @@
 (defn pull-request-to-slack-text [pr-data]
   (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">"))
 
+(defn multiple-pull-requests-to-slack [prs]
+  (str/join "\n" (map pull-request-to-slack-text prs)))
+
 (defn get-pull-requests-for-user [user]
   ((github/pull-requests-by-user) user))
 
 (defn get-all-pull-requests [user]
   (github/get-pull-requests))
 
-(def commands
-  {"edguy get my pull requests" get-pull-requests-for-user
-   "edguy get all pull requests" get-all-pull-requests})
+(defn set-users-github-account [user params]
+  (logging/info (str params))
+  (users/set-github-account user (params 0))
+  (format "@%s mapped to GitHub account %s" user (params 0)))
+
+(def command-to-function
+  [[#"edguy get my pull requests" get-pull-requests-for-user]
+   [#"edguy get all pull requests" #(-> % get-all-pull-requests multiple-pull-requests-to-slack)]
+   [#"edguy my github account is (.*)" set-users-github-account]])
+
+(defn parse-message [command-patterns message]
+  (some #(let [regex (re-find (% 0) message)] (if regex [(vec (rest regex)) (% 1)])) command-patterns))
 
 (defn edguy-routes [user message]
   (logging/info "edguy got " user message)
-  ((commands message) ""))
+  (def accounts (users/get-user-accounts user))
+  (logging/info "accounts " (str accounts))
+  (let [cmd (parse-message command-to-function  message)] ((cmd 1) user (cmd 0))))
 
 (defroutes app-routes
   (GET "/" request 
@@ -56,10 +71,10 @@
   (POST "/slackbot" {body :body}
         (def slack-data (parse-slack-outgoing-hook body))
         (logging/info (slack-data "user_name"))
-        (logging/info (java.net.URLDecoder/decode (slack-data "text")))
+        (logging/info (slack-data "text"))
         (logging/info (slack-data "trigger_word"))
         (def x (edguy-routes (slack-data "user_name") (slack-data "text")))
-        (json-response {"text" (str/join "\n" (map pull-request-to-slack-text x))}))
+        (json-response {"text" x}))
   (route/not-found "Not Found Sorry"))
 
 (def app
