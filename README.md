@@ -1,6 +1,8 @@
 # edguy
 
-FIXME
+Build Status:
+
+https://travis-ci.org/erichgess/edguy.svg?branch=master
 
 ## Prerequisites
 
