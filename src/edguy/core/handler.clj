@@ -25,25 +25,30 @@
   (into {} (map #(array-map (% 0) (java.net.URLDecoder/decode (% 1))) (map #(str/split % #"=") (str/split (slurp message) #"&")))))
 
 (defn pull-request-to-slack-text [pr-data]
-  (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">"))
+  (logging/info pr-data)
+  (if pr-data
+    (str "<" (pr-data :user_url) "|" (pr-data :user) "> has created a new pull request: <" (pr-data :url) "|" (pr-data :title) ">")
+    "No Pull Requests"))
 
 (defn multiple-pull-requests-to-slack [prs]
   (str/join "\n" (map pull-request-to-slack-text prs)))
 
-(defn get-pull-requests-for-user [user]
-  ((github/pull-requests-by-user) user))
-
-(defn get-all-pull-requests [user]
-  (github/get-pull-requests))
+(defn get-pull-requests-for-user [user params]
+  (logging/info "getting pull requests for user %s" user)
+  (-> ((github/pull-requests-by-user) user)
+      (pull-request-to-slack-text)))
 
 (defn set-users-github-account [user params]
   (logging/info (str params))
   (users/set-github-account user (params 0))
   (format "@%s mapped to GitHub account %s" user (params 0)))
 
+(defn get-all-pull-requests-command [user params]
+  (-> (github/get-pull-requests) multiple-pull-requests-to-slack))
+
 (def command-to-function
   [[#"edguy get my pull requests" get-pull-requests-for-user]
-   [#"edguy get all pull requests" #(-> % get-all-pull-requests multiple-pull-requests-to-slack)]
+   [#"edguy get all pull requests" get-all-pull-requests-command]
    [#"edguy my github account is (.*)" set-users-github-account]])
 
 (defn parse-message [command-patterns message]
@@ -74,6 +79,7 @@
         (logging/info (slack-data "text"))
         (logging/info (slack-data "trigger_word"))
         (def x (edguy-routes (slack-data "user_name") (slack-data "text")))
+        (logging/info "Sending" x)
         (json-response {"text" x}))
   (route/not-found "Not Found Sorry"))
 
