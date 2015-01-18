@@ -33,10 +33,15 @@
 (defn multiple-pull-requests-to-slack [prs]
   (str/join "\n" (map pull-request-to-slack-text prs)))
 
-(defn get-pull-requests-for-user [user params]
+(defn get-users-pull-requests [user params]
   (logging/info "getting pull requests for user %s" user)
   (-> ((github/pull-requests-by-user) user)
       (pull-request-to-slack-text)))
+
+(defn get-users-accounts [user params]
+  (logging/debug "getting github account for user " user)
+  (let [accounts ((users/get-user-accounts user) 0)]
+    (format "Your GitHub account is %s\nYour Wrike account is %s" (accounts :github_id) (accounts :wrike_id))))
 
 (defn set-users-github-account [user params]
   (logging/info (str params))
@@ -47,9 +52,10 @@
   (-> (github/get-pull-requests) multiple-pull-requests-to-slack))
 
 (def command-to-function
-  [[#"edguy get my pull requests" get-pull-requests-for-user]
+  [[#"edguy get my pull requests" get-users-pull-requests]
    [#"edguy get all pull requests" get-all-pull-requests-command]
-   [#"edguy my github account is (.*)" set-users-github-account]])
+   [#"edguy my github account is (.*)" set-users-github-account]
+   [#"edguy get my accounts" get-users-accounts]])
 
 (defn parse-message [command-patterns message]
   (some #(let [regex (re-find (% 0) message)] (if regex [(vec (rest regex)) (% 1)])) command-patterns))
