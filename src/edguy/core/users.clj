@@ -12,9 +12,9 @@
         (jdbc/insert! t-con table row)
         result))))
 
-(def db {:subprotocol "sqlite"
-                :subname "../data/edguy.db"
-                :classname "org.sqlite.JDBC"})
+(def db { :subprotocol "sqlite"
+          :subname "./data/edguy.db"
+          :classname "org.sqlite.JDBC"})
 
 (defn create-users-table []
   (try (jdbc/db-do-commands db
