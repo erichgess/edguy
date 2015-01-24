@@ -90,7 +90,9 @@
   (route/not-found "Not Found Sorry"))
 
 (def app
-  (->
-    app-routes
-    middleware/wrap-json-params
-    ring.middleware.logger/wrap-with-logger))
+  (do
+    (users/create-database)
+    (->
+      app-routes
+      middleware/wrap-json-params
+      ring.middleware.logger/wrap-with-logger)))

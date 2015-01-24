@@ -13,7 +13,7 @@
         result))))
 
 (def db { :subprotocol "sqlite"
-          :subname "./data/edguy.db"
+          :subname "data/edguy.db"
           :classname "org.sqlite.JDBC"})
 
 (defn create-users-table []
@@ -24,7 +24,11 @@
       [:wrike_id :varchar]))))
 
 (defn create-database []
-  (create-users-table))
+  (.mkdir (java.io.File. "data"))
+  (try
+    (create-users-table)
+    (catch java.sql.BatchUpdateException e
+      (logging/info "Database already exists :)"))))
 
 (defn get-user-accounts [slack_id]
   (vec (try (jdbc/query db
