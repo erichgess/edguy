@@ -1,4 +1,4 @@
-(defproject edguy "0.1.0-SNAPSHOT"
+(defproject edguy "0.1.2-SNAPSHOT"
   :description "An integration bot between Slack and GitHub.  Built purely to help me learn Clojure and to have some fun."
   :url ""
   :min-lein-version "2.0.0"
