@@ -14,9 +14,9 @@
    :title (pr-body "title")})
 
 (defn query-url [url token]
-   (def response ( http/get url {:basic-auth [token ""]}))
-   (logging/info "successfully got response from GitHub")
-   response)
+  (let [response ( http/get url {:basic-auth [token ""]})]
+    (logging/info "successfully got response from GitHub")
+    response))
 
 (defn extract-title-and-creator [pull-requests]
   (map parse-pull-request pull-requests))

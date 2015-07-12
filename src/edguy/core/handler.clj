@@ -62,9 +62,9 @@
 
 (defn edguy-routes [user message]
   (logging/info "edguy got " user message)
-  (def accounts (users/get-user-accounts user))
-  (logging/info "accounts " (str accounts))
-  (let [cmd (parse-message command-to-function  message)] ((cmd 1) user (cmd 0))))
+  (let [accounts (users/get-user-accounts user)]
+    (logging/info "accounts " (str accounts))
+    (let [cmd (parse-message command-to-function  message)] ((cmd 1) user (cmd 0)))))
 
 (defroutes app-routes
   (GET "/" request 
@@ -80,13 +80,13 @@
                         "User" ((pull_request "user") "login")
                         "State" (pull_request "state")}))
   (POST "/slackbot" {body :body}
-        (def slack-data (parse-slack-outgoing-hook body))
-        (logging/info (slack-data "user_name"))
-        (logging/info (slack-data "text"))
-        (logging/info (slack-data "trigger_word"))
-        (def x (edguy-routes (slack-data "user_name") (slack-data "text")))
-        (logging/info "Sending" x)
-        (json-response {"text" x}))
+        (let [slack-data (parse-slack-outgoing-hook body)]
+          (logging/info (slack-data "user_name"))
+          (logging/info (slack-data "text"))
+          (logging/info (slack-data "trigger_word"))
+          (let [x (edguy-routes (slack-data "user_name") (slack-data "text"))]
+            (logging/info "Sending" x)
+            (json-response {"text" x}))))
   (route/not-found "Not Found Sorry"))
 
 (def app
